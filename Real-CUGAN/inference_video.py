@@ -28,9 +28,9 @@ class UpScalerMT(threading.Thread):
         return (idx, res)
 
     def run(self):
-        while (1):
+        while 1:
             tmp = self.inp_q.get()
-            if (tmp == None):
+            if tmp is None:
                 # print("exit")
                 break
             self.res_q.put(self.inference(tmp))
@@ -46,9 +46,11 @@ class VideoRealWaifuUpScaler(object):
         self.inp_q = Queue(self.nt * self.n_gpu * 2)  # 抽帧缓存上限帧数
         self.res_q = Queue(self.nt * self.n_gpu * 2)  # 超分帧结果缓存上限
         for i in range(self.n_gpu):
-            device = device_base + ":%s" % i
+            device = f"{device_base}:{i}"
             #load+device初始化好当前卡的模型
-            model=RealWaifuUpScaler(self.scale, eval("model_path%s" % self.scale), half, device)
+            model = RealWaifuUpScaler(
+                self.scale, eval(f"model_path{self.scale}"), half, device
+            )
             for _ in range(self.nt):
                 upscaler = UpScalerMT(self.inp_q, self.res_q, device, model,p_sleep,self.nt,tile,cache_mode,alpha)
                 upscaler.start()
@@ -59,8 +61,8 @@ class VideoRealWaifuUpScaler(object):
         fps=objVideoreader.reader.fps
         total_frame=objVideoreader.reader.nframes
         if_audio=objVideoreader.audio
-        if(if_audio):
-            tmp_audio_path="%s.m4a"%inp_path
+        if if_audio:
+            tmp_audio_path = f"{inp_path}.m4a"
             objVideoreader.audio.write_audiofile(tmp_audio_path,codec="aac")
             writer = FFMPEG_VideoWriter(opt_path, (w * self.scale, h * self.scale), fps, ffmpeg_params=self.encode_params,audiofile=tmp_audio_path)  # slower#medium
         else:
